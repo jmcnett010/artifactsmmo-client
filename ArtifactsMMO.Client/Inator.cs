@@ -9,15 +9,25 @@ public class Inator(string username, string password)
     private readonly string username = username;
     private readonly string password = password;
 
-
     public async Task FightChickens(string character)
     {
-        var commands = new Commands(client);
-        await commands.Authenticate(username, password);
+        while (true)
+        {
+            var commands = new Commands(client);
+            await commands.Authenticate(username, password); // Ideally we would only authenticate when our token expires, but the API does not return a TTL
 
-        var chickenCoop = new Coordinates(0, 1);
+            // TODO - Dont move to the chicken coop if we are already there
+            var chickenCoop = new Coordinates(0, 1);
+            await commands.Move(character, chickenCoop);
 
-        await commands.Move(character, chickenCoop);
-        await commands.Attack(character);
+            var result = await commands.Attack(character);
+
+            var combatResult = result.Data;
+            Console.WriteLine($"FightResult: {combatResult.Fight.Result}");
+            Console.WriteLine($"RemainingSeconds: {combatResult.Cooldown.RemainingSeconds}");
+
+            // Wait until the cooldown is up
+            Thread.Sleep(TimeSpan.FromSeconds(combatResult.Cooldown.RemainingSeconds + 1));
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Runtime.InteropServices;
+using System.Text;
 
 namespace ArtifactsMMO.Client.Models;
 
@@ -61,13 +62,11 @@ public class Commands(HttpClient client)
         Console.WriteLine(await response.Content.ReadAsStringAsync());
     }
 
-    public async Task Attack(string character)
+    public async Task<CombatResults> Attack(string character)
     {
         Console.WriteLine($"Attacking with {character}");
 
         var requestUrl = new Uri($"{Url}/my/{character}/action/fight");
-
-        Console.WriteLine(requestUrl.ToString());
 
         // Build Request
         var request = new HttpRequestMessage(HttpMethod.Post, requestUrl);
@@ -76,8 +75,9 @@ public class Commands(HttpClient client)
         request.Headers.Add("Authorization", $"{AuthenticationToken}");
 
         var response = await Client.SendAsync(request);
+        var responseBody = await response.Content.ReadAsStringAsync();
 
-        Console.WriteLine(await response.Content.ReadAsStringAsync());
+        return CombatResults.Parse(responseBody);
     }
 
     public async Task Gather()
