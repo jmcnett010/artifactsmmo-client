@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace ArtifactsMMO.Client;
+namespace ArtifactsMMO.Client.Models;
 
 public class Coordinates
 {

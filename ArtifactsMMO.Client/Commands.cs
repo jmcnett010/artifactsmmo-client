@@ -1,7 +1,6 @@
 ﻿using System.Text;
-using System.Text.Json;
 
-namespace ArtifactsMMO.Client;
+namespace ArtifactsMMO.Client.Models;
 
 public class Commands(HttpClient client)
 {
@@ -60,5 +59,33 @@ public class Commands(HttpClient client)
         var response = await Client.SendAsync(request);
 
         Console.WriteLine(await response.Content.ReadAsStringAsync());
+    }
+
+    public async Task Attack(string character)
+    {
+        Console.WriteLine($"Attacking with {character}");
+
+        var requestUrl = new Uri($"{Url}/my/{character}/action/fight");
+
+        Console.WriteLine(requestUrl.ToString());
+
+        // Build Request
+        var request = new HttpRequestMessage(HttpMethod.Post, requestUrl);
+
+        request.Headers.Add("Accept", "application/json");
+        request.Headers.Add("Authorization", $"{AuthenticationToken}");
+
+        var response = await Client.SendAsync(request);
+
+        Console.WriteLine(await response.Content.ReadAsStringAsync());
+    }
+
+    public async Task Gather()
+    {
+
+    }
+
+    public async Task Craft() {
+
     }
 }
