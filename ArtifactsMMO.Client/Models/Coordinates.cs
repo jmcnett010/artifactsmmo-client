@@ -3,26 +3,20 @@ using System.Text.Json.Serialization;
 
 namespace ArtifactsMMO.Client.Models;
 
-public class Coordinates
+public class Coordinates 
 {
     [JsonPropertyName("x")]
-    public int X { get; set; }
+    public required int X { get; init; }
     [JsonPropertyName("y")]
-    public int Y { get; set; }
+    public required int Y { get; init; }
 
-    public Coordinates(int x, int y)
+    public override string ToString() 
     {
-        X = x;
-        Y = y;
+        return $"({X},{Y})";
     }
 
     public string ToJson() 
     {
         return JsonSerializer.Serialize(this);
-    }
-
-    public override string ToString() 
-    {
-        return $"({X},{Y})";
     }
 }

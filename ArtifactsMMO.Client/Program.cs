@@ -7,20 +7,14 @@ Console.WriteLine("Starting Client!");
 var username = "Erosion";
 var password = "";
 
-var inator = new Inator(username, password);
+var targetCharacter = "Erosion";
 
-while (true) {
-    try
-    {
-        await inator.FightChickens("Erosion");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine(ex.Message);
+var client = new HttpClient();
+var commands = new Commands(client);
+await commands.Authenticate(username, password); // Ideally we would only authenticate when our token expires, but the API does not return a TTL
 
-        // If we get error responses, try again in a couple of minutes.
-        Thread.Sleep(TimeSpan.FromSeconds(120));
-    }
-}
+var inator = new Inator(commands);
+
+await inator.FightChickens(targetCharacter);
 
 Console.WriteLine("Finished Commands. Are ya winning, son?");

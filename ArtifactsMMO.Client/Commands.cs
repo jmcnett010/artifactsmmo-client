@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using System.Text;
+﻿using System.Text;
 
 namespace ArtifactsMMO.Client.Models;
 
@@ -41,8 +40,6 @@ public class Commands(HttpClient client)
 
         var requestUrl = new Uri($"{Url}/my/{character}/action/move");
 
-        Console.WriteLine(requestUrl.ToString());
-
         using StringContent jsonContent = new(
             coords.ToJson(),
             Encoding.UTF8,
@@ -78,6 +75,55 @@ public class Commands(HttpClient client)
         var responseBody = await response.Content.ReadAsStringAsync();
 
         return CombatResults.Parse(responseBody);
+    }
+
+    public async Task<Cooldown> DepositItem(string character, InventoryItem item)
+    {
+        Console.WriteLine($"[{character}] is depositing {item}");
+
+        var requestUrl = new Uri($"{Url}/my/{character}/action/bank/deposit");
+
+        using StringContent jsonContent = new(
+            item.ToJson(),
+            Encoding.UTF8,
+            "application/json");
+
+        // Build Request
+        var request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
+        {
+            Content = jsonContent
+        };
+        
+        request.Headers.Add("Accept", "application/json");
+        request.Headers.Add("Authorization", $"{AuthenticationToken}");
+
+        Console.WriteLine(item.ToJson());
+
+        var response = await Client.SendAsync(request);
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        Console.WriteLine(responseBody);
+        var parsedResponse = ActionResponse.Parse(responseBody);
+        return parsedResponse.Data;
+    }
+
+    public async Task<Character> GetCharacter(string character)
+    {
+        Console.WriteLine($"Pulling characters..");
+
+        var requestUrl = new Uri($"{Url}/characters/{character}");
+
+        // Build Request
+        var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+
+        request.Headers.Add("Accept", "application/json");
+        request.Headers.Add("Authorization", $"{AuthenticationToken}");
+
+        var response = await Client.SendAsync(request);
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        var parsedCharacterResponse = CharacterResponse.Parse(responseBody);
+        return parsedCharacterResponse.Character;
     }
 
     public async Task Gather()

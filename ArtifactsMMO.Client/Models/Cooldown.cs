@@ -10,7 +10,7 @@ public class Cooldown
     [JsonPropertyName("remaining_seconds")]
     public int RemainingSeconds { get; set; }
 
-    public static Cooldown ParseResponse(string responseJson)
+    public static Cooldown Parse(string responseJson)
     {
         return JsonSerializer.Deserialize<Cooldown>(responseJson) ?? new Cooldown();
     }

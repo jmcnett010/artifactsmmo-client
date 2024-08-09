@@ -3,31 +3,57 @@
 /// <summary>
 /// This class combines multiple commands to create repeatable actions
 /// </summary>
-public class Inator(string username, string password)
+public class Inator(Commands commands)
 {
-    private readonly HttpClient client = new HttpClient();
-    private readonly string username = username;
-    private readonly string password = password;
-
     public async Task FightChickens(string character)
     {
         while (true)
         {
-            var commands = new Commands(client);
-            await commands.Authenticate(username, password); // Ideally we would only authenticate when our token expires, but the API does not return a TTL
+            try
+            {
+                await commands.Move(character, Locations.LocationLookup["ChickenCoop"]);
 
-            // TODO - Dont move to the chicken coop if we are already there
-            var chickenCoop = new Coordinates(0, 1);
-            await commands.Move(character, chickenCoop);
+                while (true)
+                {
+                    var result = await commands.Attack(character);
 
-            var result = await commands.Attack(character);
+                    var combatResult = result.Data;
+                    Console.WriteLine($"FightResult: {combatResult.Fight.Result}");
+                    Console.WriteLine($"RemainingSeconds: {combatResult.Cooldown.RemainingSeconds}");
 
-            var combatResult = result.Data;
-            Console.WriteLine($"FightResult: {combatResult.Fight.Result}");
-            Console.WriteLine($"RemainingSeconds: {combatResult.Cooldown.RemainingSeconds}");
+                    // Wait until the cooldown is up
+                    Thread.Sleep(TimeSpan.FromSeconds(combatResult.Cooldown.RemainingSeconds + 1));
 
-            // Wait until the cooldown is up
-            Thread.Sleep(TimeSpan.FromSeconds(combatResult.Cooldown.RemainingSeconds + 1));
+                    // Check if inventory is full
+                    var characterData = await commands.GetCharacter(character);
+                    if (characterData.IsInventoryFull()) {
+                        Console.WriteLine($"Inventory is full, dumping contents in bank.");
+                        await DepositInventory(character);
+                        await commands.Move(character, Locations.LocationLookup["ChickenCoop"]);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+
+                // If we get error responses, try again in a couple of minutes.
+                Thread.Sleep(TimeSpan.FromSeconds(120));
+            }
+        }
+    }
+
+    public async Task DepositInventory(string character)
+    {
+        // Go to bank
+        await commands.Move(character, Locations.LocationLookup["Bank"]);
+
+        var characters = await commands.GetCharacter(character);
+        var iventory = characters.Inventory.Where(i => i.Quantity > 0).ToList();
+
+        foreach(var item in iventory) {
+            var cooldown = await commands.DepositItem(character, item);
+            Thread.Sleep(TimeSpan.FromSeconds(cooldown.TotalSeconds + 1));
         }
     }
 }
