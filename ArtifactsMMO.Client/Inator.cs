@@ -3,7 +3,7 @@
 /// <summary>
 /// This class combines multiple commands to create repeatable actions
 /// </summary>
-public class Inator(Commands commands)
+public class Inator(Commands commands, List<Coordinates> map, List<CraftableItem> allItems)
 {
     public async Task FightChickens()
     {
@@ -11,7 +11,8 @@ public class Inator(Commands commands)
         {
             try
             {
-                await commands.Move(Locations.LocationLookup["ChickenCoop"]);
+                var coords = commands.FindLocation(map, "chicken");
+                await commands.Move(coords);
 
                 while (true)
                 {
@@ -29,7 +30,7 @@ public class Inator(Commands commands)
                     if (characterData.IsInventoryFull()) {
                         Console.WriteLine($"Inventory is full, dumping contents in bank.");
                         await DepositInventory();
-                        await commands.Move(Locations.LocationLookup["ChickenCoop"]);
+                        await commands.Move(Locations.LocationLookup["Chicken Coop"]);
                     }
                 }
             }
@@ -57,5 +58,20 @@ public class Inator(Commands commands)
             var depositCd = await commands.DepositItem(item);
             Thread.Sleep(TimeSpan.FromSeconds(depositCd.TotalSeconds));
         }
+    }
+
+    public async Task CraftItem(CraftableItem item)
+    {
+        // var craftingLocation = item.Craft.Skill;
+
+
+        // Travel to bank
+
+        // Get materials from bank
+
+        // Go to the correct crafting station
+
+
+        // Execute the craft
     }
 }

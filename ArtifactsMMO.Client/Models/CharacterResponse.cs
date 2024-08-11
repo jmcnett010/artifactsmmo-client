@@ -6,11 +6,11 @@ namespace ArtifactsMMO.Client.Models;
 public class CharacterResponse 
 {
     [JsonPropertyName("data")]
-    public required Character Character { get; init; }
+    public Character Character { get; set; } = new Character();
 
     public static CharacterResponse Parse(string responseJson)
     {
-        return JsonSerializer.Deserialize<CharacterResponse>(responseJson) ?? new CharacterResponse{ Character = new Character{Name = "", Level = 0, InventoryMax = 0, Inventory = [] }};
+        return JsonSerializer.Deserialize<CharacterResponse>(responseJson) ?? new CharacterResponse();
     }
 
     public string ToJson() 

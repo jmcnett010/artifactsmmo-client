@@ -6,11 +6,11 @@ namespace ArtifactsMMO.Client.Models;
 public class InventoryItem 
 {
     [JsonPropertyName("code")]
-    public required string Name { get; init; }
+    public string Name { get; set; } = "";
     [JsonPropertyName("quantity")]
-    public required int Quantity { get; init; }
+    public int Quantity { get; set; }
     [JsonPropertyName("slot")]
-    public required int Slot { get; init; }
+    public int Slot { get; set; }
 
     public override string ToString() {
         return $"[Name: {Name}, Quantity: {Quantity}, Slot: {Slot}]";
@@ -18,5 +18,14 @@ public class InventoryItem
     public string ToJson() 
     {
         return JsonSerializer.Serialize(this);
+    }
+
+    public static InventoryItem FromCraftable(CraftableItem item, int quantity)
+    {
+        return new InventoryItem 
+        {
+            Name = item.Name,
+            Quantity = quantity,
+        };
     }
 }

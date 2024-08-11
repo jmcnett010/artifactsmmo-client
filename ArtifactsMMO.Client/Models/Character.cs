@@ -6,15 +6,15 @@ namespace ArtifactsMMO.Client.Models;
 public class Character 
 {
     [JsonPropertyName("name")]
-    public required string Name { get; init; }
+    public string Name { get; set; } = "";
     [JsonPropertyName("level")]
-    public required int Level { get; init; }
+    public int Level { get; set; }
 
     [JsonPropertyName("inventory_max_items")]
-    public required int InventoryMax { get; init; }
+    public int InventoryMax { get; set; }
 
     [JsonPropertyName("inventory")]
-    public required List<InventoryItem> Inventory { get; init; }
+    public List<InventoryItem> Inventory { get; set; } = [];
 
     public override string ToString() 
     {

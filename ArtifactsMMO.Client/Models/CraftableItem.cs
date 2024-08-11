@@ -1,6 +1,5 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
-using ArtifactsMMO.Client.Models;
 
 namespace ArtifactsMMO.Client.Models;
 
@@ -28,7 +27,7 @@ public class CraftableItem
     public List<ItemEffect> Effects { get; set; } = [];
 
     [JsonPropertyName("craft")]
-    public CraftableItem Craft { get; set; } = new CraftableItem();
+    public Craft Craft { get; set; } = new Craft();
 
     public string ToJson() 
     {

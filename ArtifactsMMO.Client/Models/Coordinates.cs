@@ -5,10 +5,20 @@ namespace ArtifactsMMO.Client.Models;
 
 public class Coordinates 
 {
-    [JsonPropertyName("x")]
-    public required int X { get; init; }
-    [JsonPropertyName("y")]
-    public required int Y { get; init; }
+	[JsonPropertyName("x")]
+    public int X { get; set;  }
+    
+	[JsonPropertyName("y")]
+    public int Y { get; set;  }
+    
+	[JsonPropertyName("name")]
+    public string Name { get; set;  } = "";
+    
+	[JsonPropertyName("skin")]
+    public string Skin { get; set;  } = "";
+    
+	[JsonPropertyName("content")]
+    public MapContent? Content { get; set; }
 
     public override string ToString() 
     {

@@ -6,7 +6,10 @@ namespace ArtifactsMMO.Client.Models;
 public class AllItemsResponse 
 {
     [JsonPropertyName("data")]
-    public List<CraftableItem> CraftableItems { get; set; } = new List<CraftableItem>();
+    public List<CraftableItem> CraftableItems { get; set; } = [];
+    
+    [JsonPropertyName("pages")]
+    public int Pages { get; set; }
 
     public static AllItemsResponse Parse(string responseJson)
     {

@@ -17,13 +17,13 @@ var token = await commands.Authenticate(username, password); // Ideally we would
 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
 
-var inator = new Inator(commands);
 
+var items = await commands.CheckAllItems();
+var map = await commands.CheckMap();
 
+var inator = new Inator(commands, map, items);
 
-await commands.CheckAllItems();
-
-// await inator.FightChickens();
+await inator.FightChickens();
 
 
 

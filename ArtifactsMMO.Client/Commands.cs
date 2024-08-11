@@ -51,9 +51,6 @@ public class Commands(HttpClient client, string character)
             Content = jsonContent
         };
 
-        // request.Headers.Add("Accept", "application/json");
-        // request.Headers.Add("Authorization", $"{AuthenticationToken}");
-
         var response = await Client.SendAsync(request);
         var responseBody = await response.Content.ReadAsStringAsync();
 
@@ -99,9 +96,33 @@ public class Commands(HttpClient client, string character)
         return parsedResponse.Data.Cooldown ?? new Cooldown();
     }
 
+        public async Task<Cooldown> WithdrawItem(InventoryItem item)
+    {
+        Console.WriteLine($"[{Character}] is depositing {item}");
+
+        var requestUrl = new Uri($"{Url}/my/{Character}/action/bank/withdraw");
+
+        using StringContent jsonContent = new(
+            item.ToJson(),
+            Encoding.UTF8,
+            "application/json");
+
+        // Build Request
+        var request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
+        {
+            Content = jsonContent
+        };
+
+        var response = await Client.SendAsync(request);
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        var parsedResponse = ActionResponse.Parse(responseBody);
+        return parsedResponse.Data.Cooldown ?? new Cooldown();
+    }
+
     public async Task<Character> GetCharacter()
     {
-        Console.WriteLine($"Pulling Characters..");
+        Console.WriteLine($"Pulling Character [{Character}]..");
 
         var requestUrl = new Uri($"{Url}/Characters/{Character}");
 
@@ -115,43 +136,85 @@ public class Commands(HttpClient client, string character)
         return parsedCharacterResponse.Character;
     }
 
-    public async Task CheckMap()
+    public async Task<List<Coordinates>> CheckMap()
     {
-        Console.WriteLine($"Gathering with {Character}");
-        var requestUrl = new Uri($"{Url}/my/{Character}/maps");
+        Console.WriteLine($"Pulling map data...");
+        var page = 1;
+        var size = 10;
+        var coordinates = new List<Coordinates>();
+        var pages = 100;
 
-        // Build Request
-        var request = new HttpRequestMessage(HttpMethod.Post, requestUrl);
+        while (page != pages) {
+            var requestUrl = new Uri($"{Url}/maps?page={page}&size={size}");
 
-        var response = await Client.SendAsync(request);
-        var responseBody = await response.Content.ReadAsStringAsync();
+            var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
 
-        // var parsedResponse = ActionResponse.Parse(responseBody);
-        // return parsedResponse.Data.Cooldown ?? new Cooldown();
+            var response = await Client.SendAsync(request);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            MapResponse parsedResponse;
+            try
+            {
+                parsedResponse = MapResponse.Parse(responseBody);
+                coordinates.AddRange(parsedResponse.Coordinates ?? []);
+                pages = parsedResponse.Pages;
+                page++;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                throw;
+            }
+        }
+
+        return coordinates;
+    }
+
+    /// <summary>
+    /// Ideally, this would find the closest location.
+    /// </summary>
+    /// <param name="content">The map content we are looking for</param>
+    /// <returns></returns>
+    public Coordinates FindLocation(List<Coordinates> map, string content)
+    {
+        var availableOptions = map.Where(coords => (coords.Content?.Code ?? "") == content).ToList();
+
+        // TODO - Get closest option;
+        return availableOptions.First();
     }
 
     public async Task<List<CraftableItem>> CheckAllItems()
     {
-        var requestUrl = new Uri($"{Url}/items");
+        Console.WriteLine($"Pulling item data...");
+        var page = 1;
+        var size = 10;
+        var items = new List<CraftableItem>();
+        var pages = 100;
 
-        var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+        while (page != pages) {
+            var requestUrl = new Uri($"{Url}/items?page={page}&size={size}");
 
-        var response = await Client.SendAsync(request);
-        var responseBody = await response.Content.ReadAsStringAsync();
+            var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
 
-AllItemsResponse parsedResponse;
-try
-{
-    parsedResponse = AllItemsResponse.Parse(responseBody);
-}
-catch (System.Exception ex)
-{
-    Console.WriteLine(ex.Message);
-    throw;
-}
+            var response = await Client.SendAsync(request);
+            var responseBody = await response.Content.ReadAsStringAsync();
 
+            AllItemsResponse parsedResponse;
+            try
+            {
+                parsedResponse = AllItemsResponse.Parse(responseBody);
+                items.AddRange(parsedResponse.CraftableItems ?? []);
+                pages = parsedResponse.Pages;
+                page++;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                throw;
+            }
+        }
 
-        return parsedResponse.CraftableItems ?? [];
+        return items;
     }
 
     public async Task<Cooldown> Gather()
@@ -169,8 +232,9 @@ catch (System.Exception ex)
         return parsedResponse.Data.Cooldown ?? new Cooldown();
     }
 
-    public async Task<Cooldown> Craft(InventoryItem item)
+    public async Task<Cooldown> Craft(CraftableItem item)
     {
+        Console.WriteLine($"Crafting {item.Name}");
         var requestUrl = new Uri($"{Url}/my/{Character}/action/crafting");
 
         using StringContent jsonContent = new(

@@ -5,6 +5,14 @@ namespace ArtifactsMMO.Client.Models;
 
 public class Craft 
 {
+    /// <summary>
+    /// weaponcrafting
+    /// gearcrafting
+    /// jewelrycrafting
+    /// cooking
+    /// woodcutting
+    /// mining
+    /// </summary>
     [JsonPropertyName("skill")]
     public string Skill { get; set; } = "";
 
