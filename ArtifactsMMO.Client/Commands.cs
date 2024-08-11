@@ -2,13 +2,13 @@
 
 namespace ArtifactsMMO.Client.Models;
 
-public class Commands(HttpClient client)
+public class Commands(HttpClient client, string character)
 {
     private HttpClient Client { get; set; } = client;
     private readonly string Url = "https://api.artifactsmmo.com";
-    private AuthenticationToken AuthenticationToken { get; set; } = new AuthenticationToken();
+    private string Character { get; } = character;
 
-    public async Task Authenticate(string username, string password)
+    public async Task<AuthenticationToken> Authenticate(string username, string password)
     {
         Console.WriteLine($"Getting access token...");
 
@@ -31,14 +31,14 @@ public class Commands(HttpClient client)
 
         Console.WriteLine(responseContent);
 
-        AuthenticationToken = AuthenticationToken.ParseResponse(responseContent);
+        return AuthenticationToken.ParseResponse(responseContent);
     }
 
-    public async Task Move(string character, Coordinates coords)
+    public async Task<Cooldown> Move(Coordinates coords)
     {
-        Console.WriteLine($"Moving {character} to {coords}");
+        Console.WriteLine($"Moving {Character} to {coords}");
 
-        var requestUrl = new Uri($"{Url}/my/{character}/action/move");
+        var requestUrl = new Uri($"{Url}/my/{Character}/action/move");
 
         using StringContent jsonContent = new(
             coords.ToJson(),
@@ -51,25 +51,23 @@ public class Commands(HttpClient client)
             Content = jsonContent
         };
 
-        request.Headers.Add("Accept", "application/json");
-        request.Headers.Add("Authorization", $"{AuthenticationToken}");
+        // request.Headers.Add("Accept", "application/json");
+        // request.Headers.Add("Authorization", $"{AuthenticationToken}");
 
         var response = await Client.SendAsync(request);
+        var responseBody = await response.Content.ReadAsStringAsync();
 
-        Console.WriteLine(await response.Content.ReadAsStringAsync());
+        var parsedResponse = ActionResponse.Parse(responseBody);
+        return parsedResponse.Data.Cooldown ?? new Cooldown();
     }
 
-    public async Task<CombatResults> Attack(string character)
+    public async Task<CombatResults> Attack()
     {
-        Console.WriteLine($"Attacking with {character}");
-
-        var requestUrl = new Uri($"{Url}/my/{character}/action/fight");
+        Console.WriteLine($"Attacking with {Character}");
+        var requestUrl = new Uri($"{Url}/my/{Character}/action/fight");
 
         // Build Request
         var request = new HttpRequestMessage(HttpMethod.Post, requestUrl);
-
-        request.Headers.Add("Accept", "application/json");
-        request.Headers.Add("Authorization", $"{AuthenticationToken}");
 
         var response = await Client.SendAsync(request);
         var responseBody = await response.Content.ReadAsStringAsync();
@@ -77,11 +75,11 @@ public class Commands(HttpClient client)
         return CombatResults.Parse(responseBody);
     }
 
-    public async Task<Cooldown> DepositItem(string character, InventoryItem item)
+    public async Task<Cooldown> DepositItem(InventoryItem item)
     {
-        Console.WriteLine($"[{character}] is depositing {item}");
+        Console.WriteLine($"[{Character}] is depositing {item}");
 
-        var requestUrl = new Uri($"{Url}/my/{character}/action/bank/deposit");
+        var requestUrl = new Uri($"{Url}/my/{Character}/action/bank/deposit");
 
         using StringContent jsonContent = new(
             item.ToJson(),
@@ -93,31 +91,22 @@ public class Commands(HttpClient client)
         {
             Content = jsonContent
         };
-        
-        request.Headers.Add("Accept", "application/json");
-        request.Headers.Add("Authorization", $"{AuthenticationToken}");
-
-        Console.WriteLine(item.ToJson());
 
         var response = await Client.SendAsync(request);
         var responseBody = await response.Content.ReadAsStringAsync();
 
-        Console.WriteLine(responseBody);
         var parsedResponse = ActionResponse.Parse(responseBody);
-        return parsedResponse.Data;
+        return parsedResponse.Data.Cooldown ?? new Cooldown();
     }
 
-    public async Task<Character> GetCharacter(string character)
+    public async Task<Character> GetCharacter()
     {
-        Console.WriteLine($"Pulling characters..");
+        Console.WriteLine($"Pulling Characters..");
 
-        var requestUrl = new Uri($"{Url}/characters/{character}");
+        var requestUrl = new Uri($"{Url}/Characters/{Character}");
 
         // Build Request
         var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
-
-        request.Headers.Add("Accept", "application/json");
-        request.Headers.Add("Authorization", $"{AuthenticationToken}");
 
         var response = await Client.SendAsync(request);
         var responseBody = await response.Content.ReadAsStringAsync();
@@ -126,12 +115,79 @@ public class Commands(HttpClient client)
         return parsedCharacterResponse.Character;
     }
 
-    public async Task Gather()
+    public async Task CheckMap()
     {
+        Console.WriteLine($"Gathering with {Character}");
+        var requestUrl = new Uri($"{Url}/my/{Character}/maps");
 
+        // Build Request
+        var request = new HttpRequestMessage(HttpMethod.Post, requestUrl);
+
+        var response = await Client.SendAsync(request);
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        // var parsedResponse = ActionResponse.Parse(responseBody);
+        // return parsedResponse.Data.Cooldown ?? new Cooldown();
     }
 
-    public async Task Craft() {
+    public async Task<List<CraftableItem>> CheckAllItems()
+    {
+        var requestUrl = new Uri($"{Url}/items");
 
+        var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+
+        var response = await Client.SendAsync(request);
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+AllItemsResponse parsedResponse;
+try
+{
+    parsedResponse = AllItemsResponse.Parse(responseBody);
+}
+catch (System.Exception ex)
+{
+    Console.WriteLine(ex.Message);
+    throw;
+}
+
+
+        return parsedResponse.CraftableItems ?? [];
+    }
+
+    public async Task<Cooldown> Gather()
+    {
+        Console.WriteLine($"Gathering with {Character}");
+        var requestUrl = new Uri($"{Url}/my/{Character}/action/gathering");
+
+        // Build Request
+        var request = new HttpRequestMessage(HttpMethod.Post, requestUrl);
+
+        var response = await Client.SendAsync(request);
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        var parsedResponse = ActionResponse.Parse(responseBody);
+        return parsedResponse.Data.Cooldown ?? new Cooldown();
+    }
+
+    public async Task<Cooldown> Craft(InventoryItem item)
+    {
+        var requestUrl = new Uri($"{Url}/my/{Character}/action/crafting");
+
+        using StringContent jsonContent = new(
+            item.ToJson(),
+            Encoding.UTF8,
+            "application/json");
+
+        // Build Request
+        var request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
+        {
+            Content = jsonContent
+        };
+
+        var response = await Client.SendAsync(request);
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        var parsedResponse = ActionResponse.Parse(responseBody);
+        return parsedResponse.Data.Cooldown ?? new Cooldown();
     }
 }

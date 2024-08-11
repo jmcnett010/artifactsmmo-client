@@ -5,17 +5,17 @@
 /// </summary>
 public class Inator(Commands commands)
 {
-    public async Task FightChickens(string character)
+    public async Task FightChickens()
     {
         while (true)
         {
             try
             {
-                await commands.Move(character, Locations.LocationLookup["ChickenCoop"]);
+                await commands.Move(Locations.LocationLookup["ChickenCoop"]);
 
                 while (true)
                 {
-                    var result = await commands.Attack(character);
+                    var result = await commands.Attack();
 
                     var combatResult = result.Data;
                     Console.WriteLine($"FightResult: {combatResult.Fight.Result}");
@@ -25,11 +25,11 @@ public class Inator(Commands commands)
                     Thread.Sleep(TimeSpan.FromSeconds(combatResult.Cooldown.RemainingSeconds + 1));
 
                     // Check if inventory is full
-                    var characterData = await commands.GetCharacter(character);
+                    var characterData = await commands.GetCharacter();
                     if (characterData.IsInventoryFull()) {
                         Console.WriteLine($"Inventory is full, dumping contents in bank.");
-                        await DepositInventory(character);
-                        await commands.Move(character, Locations.LocationLookup["ChickenCoop"]);
+                        await DepositInventory();
+                        await commands.Move(Locations.LocationLookup["ChickenCoop"]);
                     }
                 }
             }
@@ -43,17 +43,19 @@ public class Inator(Commands commands)
         }
     }
 
-    public async Task DepositInventory(string character)
+    public async Task DepositInventory()
     {
         // Go to bank
-        await commands.Move(character, Locations.LocationLookup["Bank"]);
+        var moveCd = await commands.Move(Locations.LocationLookup["Bank"]);
+        Thread.Sleep(TimeSpan.FromSeconds(moveCd.TotalSeconds + 1));
 
-        var characters = await commands.GetCharacter(character);
+        var characters = await commands.GetCharacter();
         var iventory = characters.Inventory.Where(i => i.Quantity > 0).ToList();
 
-        foreach(var item in iventory) {
-            var cooldown = await commands.DepositItem(character, item);
-            Thread.Sleep(TimeSpan.FromSeconds(cooldown.TotalSeconds + 1));
+        foreach(var item in iventory) 
+        {
+            var depositCd = await commands.DepositItem(item);
+            Thread.Sleep(TimeSpan.FromSeconds(depositCd.TotalSeconds));
         }
     }
 }
