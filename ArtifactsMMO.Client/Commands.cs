@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Text.Json;
 
 namespace ArtifactsMMO.Client.Models;
 
@@ -98,7 +99,7 @@ public class Commands(HttpClient client, string character)
 
         public async Task<Cooldown> WithdrawItem(InventoryItem item)
     {
-        Console.WriteLine($"[{Character}] is depositing {item}");
+        Console.WriteLine($"[{Character}] is withdrawing {item}");
 
         var requestUrl = new Uri($"{Url}/my/{Character}/action/bank/withdraw");
 
@@ -124,7 +125,7 @@ public class Commands(HttpClient client, string character)
     {
         Console.WriteLine($"Pulling Character [{Character}]..");
 
-        var requestUrl = new Uri($"{Url}/Characters/{Character}");
+        var requestUrl = new Uri($"{Url}/characters/{Character}");
 
         // Build Request
         var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
@@ -217,7 +218,75 @@ public class Commands(HttpClient client, string character)
         return items;
     }
 
-    public async Task<Cooldown> Gather()
+    public async Task<List<Monster>> CheckAllMonsters()
+    {
+        Console.WriteLine($"Pulling monster data...");
+        var page = 1;
+        var size = 10;
+        var items = new List<Monster>();
+        var pages = 100;
+
+        while (page != pages) {
+            var requestUrl = new Uri($"{Url}/monsters?page={page}&size={size}");
+
+            var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+
+            var response = await Client.SendAsync(request);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            AllMonstersResponse parsedResponse;
+            try
+            {
+                parsedResponse = AllMonstersResponse.Parse(responseBody);
+                items.AddRange(parsedResponse.Monsters ?? []);
+                pages = parsedResponse.Pages;
+                page++;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                throw;
+            }
+        }
+
+        return items;
+    }
+
+        public async Task<List<Resource>> CheckAllResources()
+    {
+        Console.WriteLine($"Pulling resource data...");
+        var page = 1;
+        var size = 10;
+        var items = new List<Resource>();
+        var pages = 100;
+
+        while (page != pages) {
+            var requestUrl = new Uri($"{Url}/resources?page={page}&size={size}");
+
+            var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+
+            var response = await Client.SendAsync(request);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            AllResourcesResponse parsedResponse;
+            try
+            {
+                parsedResponse = AllResourcesResponse.Parse(responseBody);
+                items.AddRange(parsedResponse.Resources ?? []);
+                pages = parsedResponse.Pages;
+                page++;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                throw;
+            }
+        }
+
+        return items;
+    }
+
+    public async Task<GatherData> Gather()
     {
         Console.WriteLine($"Gathering with {Character}");
         var requestUrl = new Uri($"{Url}/my/{Character}/action/gathering");
@@ -228,17 +297,17 @@ public class Commands(HttpClient client, string character)
         var response = await Client.SendAsync(request);
         var responseBody = await response.Content.ReadAsStringAsync();
 
-        var parsedResponse = ActionResponse.Parse(responseBody);
-        return parsedResponse.Data.Cooldown ?? new Cooldown();
+        var parsedResponse = GatherResponse.Parse(responseBody);
+        return parsedResponse.Data ?? new GatherData();
     }
 
-    public async Task<Cooldown> Craft(CraftableItem item)
+    public async Task<CraftResponseData> Craft(string code, int quantity)
     {
-        Console.WriteLine($"Crafting {item.Name}");
+        Console.WriteLine($"Crafting {code}");
         var requestUrl = new Uri($"{Url}/my/{Character}/action/crafting");
 
         using StringContent jsonContent = new(
-            item.ToJson(),
+            JsonSerializer.Serialize(new { code, quantity}),
             Encoding.UTF8,
             "application/json");
 
@@ -249,9 +318,58 @@ public class Commands(HttpClient client, string character)
         };
 
         var response = await Client.SendAsync(request);
-        var responseBody = await response.Content.ReadAsStringAsync();
 
+        var responseBody = await response.Content.ReadAsStringAsync();
+        var parsedResponse = CraftResponse.Parse(responseBody);
+
+        return parsedResponse.Data ?? new CraftResponseData();
+    }
+
+    public async Task<Cooldown> Doff(string slot)
+    {
+        Console.WriteLine($"Doffing {slot}");
+        var requestUrl = new Uri($"{Url}/my/{Character}/action/unequip");
+
+        using StringContent jsonContent = new(
+            JsonSerializer.Serialize(new { slot}),
+            Encoding.UTF8,
+            "application/json");
+
+        // Build Request
+        var request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
+        {
+            Content = jsonContent
+        };
+
+        var response = await Client.SendAsync(request);
+
+        var responseBody = await response.Content.ReadAsStringAsync();
         var parsedResponse = ActionResponse.Parse(responseBody);
+
+        return parsedResponse.Data.Cooldown ?? new Cooldown();
+    }
+
+        public async Task<Cooldown> Don(CraftableItem item)
+    {
+        Console.WriteLine($"Donning {item.Code} on {item.Type}");
+        var requestUrl = new Uri($"{Url}/my/{Character}/action/equip");
+
+        using StringContent jsonContent = new(
+            JsonSerializer.Serialize(item),
+            Encoding.UTF8,
+            "application/json");
+
+        // Build Request
+        var request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
+        {
+            Content = jsonContent
+        };
+
+        var response = await Client.SendAsync(request);
+
+        var responseBody = await response.Content.ReadAsStringAsync();
+        var parsedResponse = ActionResponse.Parse(responseBody);
+
         return parsedResponse.Data.Cooldown ?? new Cooldown();
     }
 }

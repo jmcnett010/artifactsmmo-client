@@ -10,8 +10,11 @@ public class FightData
     public int Gold { get; set; } = 0;
 
     [JsonPropertyName("logs")]
-    public List<string> Character { get; set; } = [""];
+    public List<string> Character { get; set; } = [];
 
     [JsonPropertyName("result")]
     public string Result { get; set; } = "";
+
+    [JsonPropertyName("drops")]
+    public List<Drop> Drops { get; set; } = [];
 }

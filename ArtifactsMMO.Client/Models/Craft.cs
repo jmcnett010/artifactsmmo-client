@@ -22,8 +22,8 @@ public class Craft
     [JsonPropertyName("quantity")]
     public int Quantity { get; set; }
 
-    [JsonPropertyName("subtype")]
-    public List<InventoryItem> Subtype { get; set; } = [];
+    [JsonPropertyName("items")]
+    public List<InventoryItem> Items { get; set; } = [];
 
     public string ToJson()
     {

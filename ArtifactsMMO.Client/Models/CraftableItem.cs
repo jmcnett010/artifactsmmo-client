@@ -16,6 +16,9 @@ public class CraftableItem
     
     [JsonPropertyName("type")]
     public string Type { get; set; } = "";
+    [JsonPropertyName("slot")]
+
+    public string Slot { get {return Type; } }
 
     [JsonPropertyName("subtype")]
     public string Subtype { get; set; } = "";
@@ -27,7 +30,7 @@ public class CraftableItem
     public List<ItemEffect> Effects { get; set; } = [];
 
     [JsonPropertyName("craft")]
-    public Craft Craft { get; set; } = new Craft();
+    public Craft? Craft { get; set; } 
 
     public string ToJson() 
     {

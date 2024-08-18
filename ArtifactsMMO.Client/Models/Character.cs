@@ -7,6 +7,7 @@ public class Character
 {
     [JsonPropertyName("name")]
     public string Name { get; set; } = "";
+
     [JsonPropertyName("level")]
     public int Level { get; set; }
 
@@ -16,6 +17,27 @@ public class Character
     [JsonPropertyName("inventory")]
     public List<InventoryItem> Inventory { get; set; } = [];
 
+    [JsonPropertyName("mining_level")]
+    public int MiningLevel { get; set; } 
+
+    [JsonPropertyName("woodcutting_level")]
+    public int WoodcuttingLevel { get; set; } 
+
+    [JsonPropertyName("fishing_level")]
+    public int FishingLevel { get; set; } 
+
+    [JsonPropertyName("weaponcrafting_level")]
+    public int WeaponcraftingLevel { get; set; } 
+
+    [JsonPropertyName("gearcrafting_level")]
+    public int GearcraftingLevel { get; set; } 
+
+    [JsonPropertyName("jewelrycrafting_level")]
+    public int JewelrycraftingLevel { get; set; } 
+
+    [JsonPropertyName("cooking_level")]
+    public int CookingLevel { get; set; } 
+
     public override string ToString() 
     {
         return $"{Name}";
@@ -23,7 +45,7 @@ public class Character
 
     public bool IsInventoryFull() {
         var iventoryCount = Inventory.Sum(i => i.Quantity);
-        return iventoryCount + 1 >= InventoryMax;
+        return iventoryCount + 10 >= InventoryMax;
     }
 
     public static Character Parse(string responseJson)
